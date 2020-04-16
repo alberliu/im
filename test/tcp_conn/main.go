@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"im/internal/tcp_conn"
 	"im/pkg/pb"
 	"im/pkg/util"
 	"net"
 	"time"
 
+	util2 "github.com/alberliu/gn/test/util"
 	"github.com/golang/protobuf/proto"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -25,13 +25,11 @@ func Json(i interface{}) string {
 	return string(bytes)
 }
 
-var codecFactory = tcp_conn.NewCodecFactory(2, 65536, 1024)
-
 type TcpClient struct {
 	UserId   int64
 	DeviceId int64
 	Seq      int64
-	codec    *tcp_conn.Codec
+	codec    *util2.Codec
 }
 
 func (c *TcpClient) Output(pt pb.PackageType, requestId int64, message proto.Message) {
@@ -55,7 +53,7 @@ func (c *TcpClient) Output(pt pb.PackageType, requestId int64, message proto.Mes
 		return
 	}
 
-	err = c.codec.Encode(inputByf, time.Second)
+	_, err = c.codec.Conn.Write(util2.Encode(inputByf))
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -68,7 +66,7 @@ func (c *TcpClient) Start() {
 		return
 	}
 
-	c.codec = codecFactory.GetCodec(connect)
+	c.codec = util2.NewCodec(connect)
 
 	c.SignIn()
 	c.SyncTrigger()
