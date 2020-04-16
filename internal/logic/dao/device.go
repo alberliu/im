@@ -52,7 +52,7 @@ func (*deviceDao) Get(deviceId int64) (*model.Device, error) {
 // ListUserOnline 查询用户所有的在线设备
 func (*deviceDao) ListOnlineByUserId(userId int64) ([]model.Device, error) {
 	rows, err := db.DBCli.Query(
-		`select id,type,brand,model,system_version,sdk_version,status,conn_addr,create_time,update_time from device where user_id = ? and status = ?`,
+		`select id,type,brand,model,system_version,sdk_version,status,conn_addr,conn_fd,create_time,update_time from device where user_id = ? and status = ?`,
 		userId, model.DeviceOnLine)
 	if err != nil {
 		return nil, gerrors.WrapError(err)
@@ -62,7 +62,7 @@ func (*deviceDao) ListOnlineByUserId(userId int64) ([]model.Device, error) {
 	for rows.Next() {
 		device := new(model.Device)
 		err = rows.Scan(&device.Id, &device.Type, &device.Brand, &device.Model, &device.SystemVersion, &device.SDKVersion,
-			&device.Status, &device.ConnAddr, &device.CreateTime, &device.UpdateTime)
+			&device.Status, &device.ConnAddr, &device.ConnFd, &device.CreateTime, &device.UpdateTime)
 		if err != nil {
 			logger.Sugar.Error(err)
 			return nil, err

@@ -252,7 +252,10 @@ func (*messageService) SendToDevice(ctx context.Context, device model.Device, ms
 	if device.Status == model.DeviceOnLine {
 		message := pb.Message{Message: &msgItem}
 		_, err := rpc_cli.ConnectIntClient.DeliverMessage(grpclib.ContextWithAddr(ctx, device.ConnAddr), &pb.DeliverMessageReq{
-			DeviceId: device.Id, Message: &message})
+			DeviceId: device.Id,
+			Fd:       device.ConnFd,
+			Message:  &message,
+		})
 		if err != nil {
 			return err
 		}

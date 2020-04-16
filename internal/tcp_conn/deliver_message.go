@@ -2,6 +2,7 @@ package tcp_conn
 
 import (
 	"context"
+	"go.uber.org/zap"
 	"im/pkg/grpclib"
 	"im/pkg/logger"
 	"im/pkg/pb"
@@ -9,13 +10,18 @@ import (
 
 func DeliverMessage(ctx context.Context, req *pb.DeliverMessageReq) error {
 	// 获取设备对应的TCP连接
-	conn := load(req.DeviceId)
-	if conn == nil {
-		logger.Sugar.Warn("ctx id nil")
+	conn, ok := server.GetConn(int(req.Fd))
+	if !ok {
+		logger.Logger.Warn("GetConn warn", zap.Int64("device_id", req.DeviceId), zap.Int64("df", req.Fd))
 		return nil
 	}
 
-	// 发送消息
-	conn.Output(pb.PackageType_PT_MESSAGE, grpclib.GetCtxRequstId(ctx), nil, req.Message)
+	data := conn.GetData().(ConnData)
+	if data.DeviceId != req.DeviceId {
+		logger.Logger.Warn("GetConn warn", zap.Int64("device_id", req.DeviceId), zap.Int64("df", req.Fd))
+		return nil
+	}
+
+	Handler.Send(conn, pb.PackageType_PT_MESSAGE, grpclib.GetCtxRequstId(ctx), nil, req.Message)
 	return nil
 }
