@@ -47,7 +47,7 @@ type addrPicker struct {
 	subConns map[string]balancer.SubConn
 }
 
-func (p *addrPicker) Pick(ctx context.Context, opts balancer.PickOptions) (balancer.SubConn, func(balancer.DoneInfo), error) {
+func (p *addrPicker) Pick(ctx context.Context, opts balancer.PickInfo) (balancer.SubConn, func(balancer.DoneInfo), error) {
 	address, _ := ctx.Value(addrKey).(string)
 	sc, ok := p.subConns[address]
 	if !ok {

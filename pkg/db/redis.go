@@ -13,7 +13,7 @@ var RedisCli *redis.Client
 
 func init() {
 	RedisCli = redis.NewClient(&redis.Options{
-		Addr: config.LogicConf.RedisIP,
+		Addr: config.Logic.RedisIP,
 		DB:   0,
 	})
 

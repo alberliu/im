@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-	db.InitMysql(config.UserConf.MySQL)
-	db.InitRedis(config.UserConf.RedisIP)
+	db.InitMysql(config.User.MySQL)
+	db.InitRedis(config.User.RedisIP)
 
 	// 初始化RpcClient
-	rpc_cli.InitLogicIntClient(config.UserConf.LogicRPCAddrs)
+	rpc_cli.InitLogicIntClient(config.User.LogicRPCAddrs)
 
 	api.StartRpcServer()
 	logger.Logger.Info("user server start")

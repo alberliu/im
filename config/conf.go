@@ -5,14 +5,14 @@ import (
 )
 
 var (
-	LogicConf logicConf
-	ConnConf  connConf
-	WSConf    wsConf
-	UserConf  userConf
+	Logic   LogicConf
+	TCPConn TCPConnConf
+	WSConn  WSConnConf
+	User    UserConf
 )
 
 // logic配置
-type logicConf struct {
+type LogicConf struct {
 	MySQL            string
 	NSQIP            string
 	RedisIP          string
@@ -22,8 +22,8 @@ type logicConf struct {
 	UserRPCAddrs     string
 }
 
-// conn配置
-type connConf struct {
+// TCPConnConf配置
+type TCPConnConf struct {
 	TCPListenAddr string
 	RPCListenAddr string
 	LocalAddr     string
@@ -31,15 +31,15 @@ type connConf struct {
 }
 
 // WS配置
-type wsConf struct {
+type WSConnConf struct {
 	WSListenAddr  string
 	RPCListenAddr string
 	LocalAddr     string
 	LogicRPCAddrs string
 }
 
-// user配置
-type userConf struct {
+// User配置
+type UserConf struct {
 	MySQL            string
 	NSQIP            string
 	RedisIP          string

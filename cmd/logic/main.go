@@ -9,12 +9,12 @@ import (
 )
 
 func main() {
-	db.InitMysql(config.LogicConf.MySQL)
-	db.InitRedis(config.LogicConf.RedisIP)
+	db.InitMysql(config.Logic.MySQL)
+	db.InitRedis(config.Logic.RedisIP)
 
 	// 初始化RpcClient
-	rpc_cli.InitConnIntClient(config.LogicConf.ConnRPCAddrs)
-	rpc_cli.InitUserIntClient(config.LogicConf.UserRPCAddrs)
+	rpc_cli.InitConnIntClient(config.Logic.ConnRPCAddrs)
+	rpc_cli.InitUserIntClient(config.Logic.UserRPCAddrs)
 
 	api.StartRpcServer()
 	logger.Logger.Info("logic server start")

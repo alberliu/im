@@ -14,7 +14,7 @@ var DBCli *sql.DB
 
 func init() {
 	var err error
-	DBCli, err = sql.Open("mysql", config.LogicConf.MySQL)
+	DBCli, err = sql.Open("mysql", config.Logic.MySQL)
 	if err != nil {
 		logger.Sugar.Error("mysql err ", zap.Error(err))
 	}

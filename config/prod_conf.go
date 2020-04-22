@@ -7,31 +7,31 @@ import (
 )
 
 func initProdConf() {
-	LogicConf = logicConf{
+	Logic = LogicConf{
 		MySQL:            "root:liu123456@tcp(localhost:3306)/im?charset=utf8&parseTime=true",
 		NSQIP:            "127.0.0.1:4150",
 		RedisIP:          "127.0.0.1:6379",
 		RPCIntListenAddr: ":50000",
 		RPCExtListenAddr: ":50001",
-		ConnRPCAddrs:     "addrs:///127.0.0.1:60000,127.0.0.1:60001",
+		ConnRPCAddrs:     "addrs:///127.0.0.1:50100,127.0.0.1:50200",
 		UserRPCAddrs:     "addrs:///127.0.0.1:50300",
 	}
 
-	ConnConf = connConf{
+	TCPConn = TCPConnConf{
 		TCPListenAddr: ":8080",
 		RPCListenAddr: ":50100",
 		LocalAddr:     "127.0.0.1:50100",
 		LogicRPCAddrs: "addrs:///127.0.0.1:50000",
 	}
 
-	WSConf = wsConf{
+	WSConn = WSConnConf{
 		WSListenAddr:  ":8081",
 		RPCListenAddr: ":50200",
 		LocalAddr:     "127.0.0.1:50200",
 		LogicRPCAddrs: "addrs:///127.0.0.1:50000",
 	}
 
-	UserConf = userConf{
+	User = UserConf{
 		MySQL:            "root:liu123456@tcp(localhost:3306)/im?charset=utf8&parseTime=true",
 		NSQIP:            "127.0.0.1:4150",
 		RedisIP:          "127.0.0.1:6379",
@@ -40,6 +40,6 @@ func initProdConf() {
 		LogicRPCAddrs:    "addrs:///127.0.0.1:50000",
 	}
 
-	logger.Leavel = zap.InfoLevel
-	logger.Target = logger.File
+	logger.Leavel = zap.DebugLevel
+	logger.Target = logger.Console
 }

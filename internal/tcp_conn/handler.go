@@ -55,7 +55,8 @@ func (h *handler) OnMessage(c *gn.Conn, bytes []byte) {
 	}
 	return
 }
-func (*handler) OnClose(c *gn.Conn) {
+func (*handler) OnClose(c *gn.Conn, err error) {
+	logger.Logger.Debug("close", zap.Any("data", c.GetData()), zap.Error(err))
 	data := c.GetData().(ConnData)
 	_, _ = rpc_cli.LogicIntClient.Offline(context.TODO(), &pb.OfflineReq{
 		UserId:   data.UserId,
@@ -110,7 +111,7 @@ func (h *handler) SignIn(c *gn.Conn, input pb.Input) {
 		UserId:   signIn.UserId,
 		DeviceId: signIn.DeviceId,
 		Token:    signIn.Token,
-		ConnAddr: config.ConnConf.LocalAddr,
+		ConnAddr: config.TCPConn.LocalAddr,
 	})
 
 	h.Send(c, pb.PackageType_PT_SIGN_IN, input.RequestId, err, nil)
