@@ -111,6 +111,7 @@ func (h *handler) SignIn(c *gn.Conn, input pb.Input) {
 		DeviceId: signIn.DeviceId,
 		Token:    signIn.Token,
 		ConnAddr: config.TCPConn.LocalAddr,
+		ConnFd:   int64(c.GetFd()),
 	})
 
 	h.Send(c, pb.PackageType_PT_SIGN_IN, input.RequestId, err, nil)
