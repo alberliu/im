@@ -9,10 +9,9 @@ import (
 	"im/pkg/rpc_cli"
 
 	"github.com/alberliu/gn"
+	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/status"
-
-	"github.com/golang/protobuf/proto"
 )
 
 type ConnData struct {
