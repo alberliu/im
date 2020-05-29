@@ -39,6 +39,7 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		w.Write(bytes)
+		return
 	}
 
 	_, err := rpc_cli.LogicIntClient.ConnSignIn(grpclib.ContextWithRequstId(context.TODO(), requestId), &pb.ConnSignInReq{

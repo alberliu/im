@@ -11,6 +11,7 @@ type UserIntServer struct{}
 func (*UserIntServer) Auth(ctx context.Context, req *pb.AuthReq) (*pb.AuthResp, error) {
 	return &pb.AuthResp{}, service.AuthService.Auth(ctx, req.UserId, req.DeviceId, req.Token)
 }
+
 func (*UserIntServer) GetUsers(ctx context.Context, req *pb.GetUsersReq) (*pb.GetUsersResp, error) {
 	users, err := service.UserService.GetByIds(ctx, req.UserIds)
 	if err != nil {
