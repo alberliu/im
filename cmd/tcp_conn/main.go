@@ -3,11 +3,13 @@ package main
 import (
 	"im/config"
 	"im/internal/tcp_conn"
-	"im/pkg/rpc_cli"
+	"im/pkg/logger"
+	"im/pkg/rpc"
 	"im/pkg/util"
 )
 
 func main() {
+	logger.Init()
 	// 启动rpc服务
 	go func() {
 		defer util.RecoverPanic()
@@ -15,7 +17,7 @@ func main() {
 	}()
 
 	// 初始化Rpc Client
-	rpc_cli.InitLogicIntClient(config.TCPConn.LogicRPCAddrs)
+	rpc.InitLogicIntClient(config.TCPConn.LogicRPCAddrs)
 
 	// 启动长链接服务器
 	tcp_conn.StartTCPServer()

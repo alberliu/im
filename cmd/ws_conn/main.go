@@ -3,11 +3,13 @@ package main
 import (
 	"im/config"
 	"im/internal/ws_conn"
-	"im/pkg/rpc_cli"
+	"im/pkg/logger"
+	"im/pkg/rpc"
 	"im/pkg/util"
 )
 
 func main() {
+	logger.Init()
 	// 启动rpc服务
 	go func() {
 		defer util.RecoverPanic()
@@ -15,7 +17,7 @@ func main() {
 	}()
 
 	// 初始化Rpc Client
-	rpc_cli.InitLogicIntClient(config.WSConn.LogicRPCAddrs)
+	rpc.InitLogicIntClient(config.WSConn.LogicRPCAddrs)
 
 	// 启动长链接服务器
 	ws_conn.StartWSServer(config.WSConn.WSListenAddr)

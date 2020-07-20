@@ -14,7 +14,7 @@ type Group struct {
 	Introduction string    // 群简介
 	UserNum      int32     // 群组人数
 	Type         int32     // 群组类型
-	Extra        string    // 附加属性
+	Extra        string    // 附加字段
 	CreateTime   time.Time // 创建时间
 	UpdateTime   time.Time // 更新时间
 }

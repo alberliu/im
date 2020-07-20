@@ -9,8 +9,8 @@ import (
 
 type UserExtServer struct{}
 
-func (s *UserExtServer) SignIn(ctx context.Context, req *pb.SignInReq) (*pb.SignInResp, error) {
-	userId, token, err := service.AuthService.SignIn(ctx, req.PhoneNumber, req.Code, req.DeviceId)
+func (s *UserExtServer) SignIn(ctx context.Context, in *pb.SignInReq) (*pb.SignInResp, error) {
+	userId, token, err := service.AuthService.SignIn(ctx, in.PhoneNumber, in.Code, in.DeviceId)
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +20,7 @@ func (s *UserExtServer) SignIn(ctx context.Context, req *pb.SignInReq) (*pb.Sign
 	}, nil
 }
 
-func (s *UserExtServer) GetUser(ctx context.Context, req *pb.GetUserReq) (*pb.GetUserResp, error) {
+func (s *UserExtServer) GetUser(ctx context.Context, in *pb.GetUserReq) (*pb.GetUserResp, error) {
 	userId, _, err := grpclib.GetCtxData(ctx)
 	if err != nil {
 		return nil, err

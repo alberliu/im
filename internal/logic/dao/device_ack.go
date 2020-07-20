@@ -11,7 +11,7 @@ var DeviceAckDao = new(deviceAckDao)
 
 // Add 添加设备同步序列号记录
 func (*deviceAckDao) Add(deviceId int64, ack int64) error {
-	_, err := db.DBCli.Exec("insert into device_ack(device_id,ack) values(?,?)", deviceId, ack)
+	err := db.DB.Exec("insert into device_ack(device_id,ack) values(?,?)", deviceId, ack).Error
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
@@ -20,7 +20,7 @@ func (*deviceAckDao) Add(deviceId int64, ack int64) error {
 
 // Get 获取设备同步序列号
 func (*deviceAckDao) Get(deviceId int64) (int64, error) {
-	row := db.DBCli.QueryRow("select ack from device_ack where device_id = ?", deviceId)
+	row := db.DB.Raw("select ack from device_ack where device_id = ?", deviceId).Row()
 	var ack int64
 	err := row.Scan(&ack)
 	if err != nil {
@@ -31,7 +31,7 @@ func (*deviceAckDao) Get(deviceId int64) (int64, error) {
 
 // UpdateSyncSequence 更新设备同步序列号
 func (*deviceAckDao) Update(deviceId, ack int64) error {
-	_, err := db.DBCli.Exec("update device_ack set ack = ? where device_id = ?", ack, deviceId)
+	err := db.DB.Exec("update device_ack set ack = ? where device_id = ?", ack, deviceId).Error
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
@@ -40,11 +40,11 @@ func (*deviceAckDao) Update(deviceId, ack int64) error {
 
 // GetMaxByUserId 获取用户最大的同步序列号
 func (*deviceAckDao) GetMaxByUserId(userId int64) (int64, error) {
-	row := db.DBCli.QueryRow(`
+	row := db.DB.Raw(`
 		select max(a.ack) 
 		from device d
 		left join device_ack a on d.id = a.device_id  
-		where d.user_id = ?`, userId)
+		where d.user_id = ?`, userId).Row()
 	var ack int64
 	err := row.Scan(&ack)
 	if err != nil {

@@ -2,18 +2,15 @@ package main
 
 import (
 	"fmt"
-	"im/pkg/grpclib"
 	"im/pkg/pb"
 	"im/pkg/util"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
-	jsoniter "github.com/json-iterator/go"
 )
 
 func main() {
@@ -24,11 +21,6 @@ func main() {
 	select {}
 }
 
-func Json(i interface{}) string {
-	bytes, _ := jsoniter.Marshal(i)
-	return string(bytes)
-}
-
 type WSClient struct {
 	UserId   int64
 	DeviceId int64
@@ -37,14 +29,10 @@ type WSClient struct {
 }
 
 func (c *WSClient) Start() {
-	u := url.URL{Scheme: "ws", Host: "localhost:8081", Path: "/ws"}
+	path := fmt.Sprintf("/ws?user_id=%d&device_id=%d&token=%s", c.UserId, c.DeviceId, "0")
+	u := url.URL{Scheme: "ws", Host: "localhost:8081", Path: path}
 
-	header := http.Header{}
-	header.Set(grpclib.CtxUserId, strconv.FormatInt(c.UserId, 10))
-	header.Set(grpclib.CtxDeviceId, strconv.FormatInt(c.DeviceId, 10))
-	header.Set(grpclib.CtxToken, "0")
-
-	conn, resp, err := websocket.DefaultDialer.Dial(u.String(), header)
+	conn, resp, err := websocket.DefaultDialer.Dial(u.String(), http.Header{})
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -137,7 +125,7 @@ func (c *WSClient) HandlePackage(bytes []byte) {
 		fmt.Printf("%+v \n", output)
 		for _, msg := range syncResp.Messages {
 			fmt.Printf("消息：发送者类型：%d 发送者id：%d 请求id：%d 接收者类型：%d 接收者id：%d  消息内容：%+v seq：%d \n",
-				msg.SenderType, msg.SenderId, msg.RequestId, msg.ReceiverType, msg.ReceiverId, msg.MessageBody.MessageContent, msg.Seq)
+				msg.SenderType, msg.SenderId, msg.RequestId, msg.ReceiverType, msg.ReceiverId, util.FormatMessage(msg.MessageType, msg.MessageContent), msg.Seq)
 			c.Seq = msg.Seq
 		}
 
@@ -157,7 +145,7 @@ func (c *WSClient) HandlePackage(bytes []byte) {
 
 		msg := message.Message
 		fmt.Printf("消息：发送者类型：%d 发送者id：%d 请求id：%d 接收者类型：%d 接收者id：%d  消息内容：%+v seq：%d \n",
-			msg.SenderType, msg.SenderId, msg.RequestId, msg.ReceiverType, msg.ReceiverId, msg.MessageBody.MessageContent, msg.Seq)
+			msg.SenderType, msg.SenderId, msg.RequestId, msg.ReceiverType, msg.ReceiverId, util.FormatMessage(msg.MessageType, msg.MessageContent), msg.Seq)
 
 		c.Seq = msg.Seq
 		ack := pb.MessageACK{

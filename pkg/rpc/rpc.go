@@ -1,4 +1,4 @@
-package rpc_cli
+package rpc
 
 import (
 	"context"

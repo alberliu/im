@@ -6,7 +6,7 @@ import (
 	"im/pkg/grpclib"
 	"im/pkg/logger"
 	"im/pkg/pb"
-	"im/pkg/rpc_cli"
+	"im/pkg/rpc"
 	"im/pkg/util"
 	"io"
 	"strings"
@@ -82,7 +82,7 @@ func (c *WSConnContext) Sync(input pb.Input) {
 		return
 	}
 
-	resp, err := rpc_cli.LogicIntClient.Sync(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.SyncReq{
+	resp, err := rpc.LogicIntClient.Sync(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.SyncReq{
 		UserId:   c.UserId,
 		DeviceId: c.DeviceId,
 		Seq:      sync.Seq,
@@ -112,7 +112,7 @@ func (c *WSConnContext) MessageACK(input pb.Input) {
 		return
 	}
 
-	_, _ = rpc_cli.LogicIntClient.MessageACK(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.MessageACKReq{
+	_, _ = rpc.LogicIntClient.MessageACK(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.MessageACKReq{
 		UserId:      c.UserId,
 		DeviceId:    c.DeviceId,
 		DeviceAck:   messageACK.DeviceAck,
@@ -191,7 +191,7 @@ func (c *WSConnContext) Release() {
 
 	// 通知业务服务器设备下线
 	if c.DeviceId != PreConn {
-		_, _ = rpc_cli.LogicIntClient.Offline(context.TODO(), &pb.OfflineReq{
+		_, _ = rpc.LogicIntClient.Offline(context.TODO(), &pb.OfflineReq{
 			UserId:   c.UserId,
 			DeviceId: c.DeviceId,
 		})

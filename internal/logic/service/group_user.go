@@ -44,8 +44,8 @@ func (*groupUserService) GetUsers(ctx context.Context, groupId int64) ([]model.G
 }
 
 // AddUser 给群组添加用户
-func (*groupUserService) AddUser(ctx context.Context, groupId, userId int64, label, extra string) error {
-	err := dao.GroupUserDao.Add(groupId, userId, label, extra)
+func (*groupUserService) AddUser(ctx context.Context, groupId, userId int64, remarks, extra string) error {
+	err := dao.GroupUserDao.Add(groupId, userId, remarks, extra)
 	if err != nil {
 		return err
 	}
@@ -84,8 +84,8 @@ func (*groupUserService) DeleteUser(ctx context.Context, groupId, userId int64) 
 }
 
 // Update 更新群组用户信息
-func (*groupUserService) Update(ctx context.Context, groupId int64, userId int64, label, extra string) error {
-	err := dao.GroupUserDao.Update(groupId, userId, label, extra)
+func (*groupUserService) Update(ctx context.Context, groupId int64, userId int64, remarks, extra string) error {
+	err := dao.GroupUserDao.Update(groupId, userId, remarks, extra)
 	if err != nil {
 		return err
 	}

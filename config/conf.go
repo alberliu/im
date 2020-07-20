@@ -16,6 +16,7 @@ type LogicConf struct {
 	MySQL            string
 	NSQIP            string
 	RedisIP          string
+	RedisPassword    string
 	RPCIntListenAddr string
 	RPCExtListenAddr string
 	ConnRPCAddrs     string
@@ -43,6 +44,7 @@ type UserConf struct {
 	MySQL            string
 	NSQIP            string
 	RedisIP          string
+	RedisPassword    string
 	RPCIntListenAddr string
 	RPCExtListenAddr string
 	LogicRPCAddrs    string
@@ -53,8 +55,6 @@ func init() {
 	switch env {
 	case "dev":
 		initDevConf()
-	case "pre":
-		initPreConf()
 	case "prod":
 		initProdConf()
 	default:

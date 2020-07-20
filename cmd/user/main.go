@@ -5,15 +5,16 @@ import (
 	"im/internal/user/api"
 	"im/pkg/db"
 	"im/pkg/logger"
-	"im/pkg/rpc_cli"
+	"im/pkg/rpc"
 )
 
 func main() {
+	logger.Init()
 	db.InitMysql(config.User.MySQL)
-	db.InitRedis(config.User.RedisIP)
+	db.InitRedis(config.User.RedisIP, config.Logic.RedisPassword)
 
 	// 初始化RpcClient
-	rpc_cli.InitLogicIntClient(config.User.LogicRPCAddrs)
+	rpc.InitLogicIntClient(config.User.LogicRPCAddrs)
 
 	api.StartRpcServer()
 	logger.Logger.Info("user server start")

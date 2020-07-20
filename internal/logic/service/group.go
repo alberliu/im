@@ -6,6 +6,8 @@ import (
 	"im/internal/logic/dao"
 	"im/internal/logic/model"
 	"im/pkg/gerrors"
+	"im/pkg/pb"
+	"im/pkg/rpc"
 )
 
 type groupService struct{}
@@ -33,16 +35,8 @@ func (*groupService) Get(ctx context.Context, groupId int64) (*model.Group, erro
 }
 
 // Create 创建群组
-func (*groupService) Create(ctx context.Context, group model.Group) error {
-	affected, err := dao.GroupDao.Add(group)
-	if err != nil {
-		return err
-	}
-
-	if affected == 0 {
-		return gerrors.ErrGroupAlreadyExist
-	}
-	return nil
+func (*groupService) Create(ctx context.Context, group model.Group) (int64, error) {
+	return dao.GroupDao.Add(group)
 }
 
 // Update 更新群组
@@ -59,7 +53,7 @@ func (*groupService) Update(ctx context.Context, group model.Group) error {
 }
 
 // AddUser 给群组添加用户
-func (*groupService) AddUser(ctx context.Context, groupId, userId int64, label, extra string) error {
+func (*groupService) AddUser(ctx context.Context, groupId, userId int64, remarks, extra string) error {
 	group, err := GroupService.Get(ctx, groupId)
 	if err != nil {
 		return err
@@ -69,13 +63,13 @@ func (*groupService) AddUser(ctx context.Context, groupId, userId int64, label, 
 	}
 
 	if group.Type == model.GroupTypeGroup {
-		err = GroupUserService.AddUser(ctx, groupId, userId, label, extra)
+		err = GroupUserService.AddUser(ctx, groupId, userId, remarks, extra)
 		if err != nil {
 			return err
 		}
 	}
 	if group.Type == model.GroupTypeChatRoom {
-		err = cache.LargeGroupUserCache.Set(groupId, userId, label, extra)
+		err = cache.LargeGroupUserCache.Set(groupId, userId, remarks, extra)
 		if err != nil {
 			return err
 		}
@@ -133,4 +127,52 @@ func (*groupService) DeleteUser(ctx context.Context, groupId, userId int64) erro
 		}
 	}
 	return nil
+}
+
+// GetUsers 获取群组用户
+func (s *groupService) GetUsers(ctx context.Context, groupId int64) ([]*pb.GroupMember, error) {
+	group, err := s.Get(ctx, groupId)
+	if err != nil {
+		return nil, err
+	}
+	if group == nil {
+		return nil, nil
+	}
+	if group.Type != model.GroupTypeGroup {
+		return nil, nil
+	}
+
+	members, err := GroupUserService.GetUsers(ctx, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	userIds := make([]int64, len(members))
+	for i := range members {
+		userIds[i] = members[i].UserId
+	}
+	resp, err := rpc.UserIntClient.GetUsers(ctx, &pb.GetUsersReq{UserIds: userIds})
+	if err != nil {
+		return nil, err
+	}
+
+	var infos = make([]*pb.GroupMember, len(members))
+	for i := range members {
+		member := pb.GroupMember{
+			UserId:  members[i].UserId,
+			Remarks: members[i].Remarks,
+			Extra:   members[i].Extra,
+		}
+
+		user, ok := resp.Users[members[i].UserId]
+		if ok {
+			member.Nickname = user.Nickname
+			member.Sex = user.Sex
+			member.AvatarUrl = user.AvatarUrl
+			member.UserExtra = user.Extra
+		}
+		infos[i] = &member
+	}
+
+	return infos, nil
 }

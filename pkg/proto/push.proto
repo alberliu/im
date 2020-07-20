@@ -1,0 +1,27 @@
+syntax = "proto3";
+package pb;
+
+enum PushCode {
+    PC_ADD_DEFAULT = 0;
+
+    PC_ADD_FRIEND = 100; // 添加好友请求
+    PC_AGREE_ADD_FRIEND = 101; // 同意添加好友
+
+    PC_AGREE_ADD_GROUP = 110; // 同意添加好友
+
+}
+
+// 推送码 PC_ADD_FRIEND = 100
+message AddFriendPush {
+    int64 friend_id = 1; // 好友id
+    string nickname = 2; // 昵称
+    string avatar_url = 3; // 头像
+    string description = 4; // 描述
+}
+
+// 推送码 PC_AGREE_ADD_FRIEND = 101
+message AgreeAddFriendPush {
+    int64 friend_id = 1; // 好友id
+    string nickname = 2; // 昵称
+    string avatar_url = 3; // 头像
+}

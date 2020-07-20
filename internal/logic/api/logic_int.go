@@ -41,11 +41,11 @@ func (*LogicIntServer) SendMessage(ctx context.Context, req *pb.SendMessageReq) 
 		SenderId:   0,
 		DeviceId:   0,
 	}
-	err := service.MessageService.Send(ctx, sender, *req)
+	seq, err := service.MessageService.Send(ctx, sender, *req)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.SendMessageResp{}, nil
+	return &pb.SendMessageResp{Seq: seq}, nil
 }
 
 // GetDevice 获取设备信息

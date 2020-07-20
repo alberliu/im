@@ -60,11 +60,11 @@ func (c *largeGroupUserCache) MembersNum(groupId int64) (int64, error) {
 }
 
 // Set 添加群组成员
-func (c *largeGroupUserCache) Set(groupId, userId int64, label, extra string) error {
+func (c *largeGroupUserCache) Set(groupId, userId int64, remarks, extra string) error {
 	var user = model.GroupUser{
 		GroupId: groupId,
 		UserId:  userId,
-		Label:   label,
+		Remarks: remarks,
 		Extra:   extra,
 	}
 	bytes, err := jsoniter.Marshal(user)

@@ -1,10 +1,12 @@
 package dao
 
 import (
-	"database/sql"
 	"im/internal/logic/model"
 	"im/pkg/db"
 	"im/pkg/gerrors"
+	"time"
+
+	"github.com/jinzhu/gorm"
 )
 
 type groupDao struct{}
@@ -13,17 +15,12 @@ var GroupDao = new(groupDao)
 
 // Get 获取群组信息
 func (*groupDao) Get(groupId int64) (*model.Group, error) {
-	row := db.DBCli.QueryRow("select name,introduction,user_num,type,extra,create_time,update_time from `group` where id = ?",
-		groupId)
-	group := model.Group{
-		Id: groupId,
-	}
-	err := row.Scan(&group.Name, &group.Introduction, &group.UserNum, &group.Type, &group.Extra, &group.CreateTime, &group.UpdateTime)
-	if err != nil && err != sql.ErrNoRows {
+	var group = model.Group{Id: groupId}
+	err := db.DB.First(&group).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, gerrors.WrapError(err)
 	}
-
-	if err == sql.ErrNoRows {
+	if err == gorm.ErrRecordNotFound {
 		return nil, nil
 	}
 	return &group, nil
@@ -31,36 +28,31 @@ func (*groupDao) Get(groupId int64) (*model.Group, error) {
 
 // Insert 插入一条群组
 func (*groupDao) Add(group model.Group) (int64, error) {
-	result, err := db.DBCli.Exec("insert ignore into `group`(name,introduction,type,extra) value(?,?,?,?)",
-		group.Name, group.Introduction, group.Type, group.Extra)
-	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
+	group.CreateTime = time.Now()
+	group.UpdateTime = time.Now()
+	err := db.DB.Create(&group).Error
 	if err != nil {
 		return 0, gerrors.WrapError(err)
 	}
-	return id, nil
+	return group.Id, nil
 }
 
 // Update 更新群组信息
 func (*groupDao) Update(groupId int64, name, introduction, extra string) error {
-	_, err := db.DBCli.Exec("update `group` set name = ?,introduction = ?,extra = ? where id = ?",
-		name, introduction, extra, groupId)
+	err := db.DB.Exec("update `group` set name = ?,introduction = ?,extra = ? where id = ?",
+		name, introduction, extra, groupId).Error
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
-
 	return nil
 }
 
 // UpdateUserNum 更新群组信息
 func (*groupDao) UpdateUserNum(groupId int64, userNum int) error {
-	_, err := db.DBCli.Exec("update `group` set user_num = user_num + ? where id = ?",
-		userNum, groupId)
+	err := db.DB.Exec("update `group` set user_num = user_num + ? where id = ?",
+		userNum, groupId).Error
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
-
 	return nil
 }

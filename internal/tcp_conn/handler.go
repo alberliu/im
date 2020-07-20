@@ -6,7 +6,7 @@ import (
 	"im/pkg/grpclib"
 	"im/pkg/logger"
 	"im/pkg/pb"
-	"im/pkg/rpc_cli"
+	"im/pkg/rpc"
 
 	"github.com/alberliu/gn"
 	"github.com/golang/protobuf/proto"
@@ -57,7 +57,7 @@ func (h *handler) OnMessage(c *gn.Conn, bytes []byte) {
 func (*handler) OnClose(c *gn.Conn, err error) {
 	logger.Logger.Debug("close", zap.Any("data", c.GetData()), zap.Error(err))
 	data := c.GetData().(ConnData)
-	_, _ = rpc_cli.LogicIntClient.Offline(context.TODO(), &pb.OfflineReq{
+	_, _ = rpc.LogicIntClient.Offline(context.TODO(), &pb.OfflineReq{
 		UserId:   data.UserId,
 		DeviceId: data.DeviceId,
 	})
@@ -106,7 +106,7 @@ func (h *handler) SignIn(c *gn.Conn, input pb.Input) {
 		return
 	}
 
-	_, err = rpc_cli.LogicIntClient.ConnSignIn(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.ConnSignInReq{
+	_, err = rpc.LogicIntClient.ConnSignIn(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.ConnSignInReq{
 		UserId:   signIn.UserId,
 		DeviceId: signIn.DeviceId,
 		Token:    signIn.Token,
@@ -136,7 +136,7 @@ func (h *handler) Sync(c *gn.Conn, input pb.Input) {
 	}
 
 	data := c.GetData().(ConnData)
-	resp, err := rpc_cli.LogicIntClient.Sync(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.SyncReq{
+	resp, err := rpc.LogicIntClient.Sync(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.SyncReq{
 		UserId:   data.UserId,
 		DeviceId: data.DeviceId,
 		Seq:      sync.Seq,
@@ -166,7 +166,7 @@ func (*handler) MessageACK(c *gn.Conn, input pb.Input) {
 	}
 
 	data := c.GetData().(ConnData)
-	_, _ = rpc_cli.LogicIntClient.MessageACK(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.MessageACKReq{
+	_, _ = rpc.LogicIntClient.MessageACK(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.MessageACKReq{
 		UserId:      data.UserId,
 		DeviceId:    data.DeviceId,
 		DeviceAck:   messageACK.DeviceAck,

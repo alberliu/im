@@ -7,7 +7,7 @@ import (
 	"im/internal/user/model"
 	"im/pkg/gerrors"
 	"im/pkg/pb"
-	"im/pkg/rpc_cli"
+	"im/pkg/rpc"
 	"time"
 )
 
@@ -35,7 +35,7 @@ func (*authService) SignIn(ctx context.Context, phoneNumber, code string, device
 		user.Id = id
 	}
 
-	resp, err := rpc_cli.LogicIntClient.GetDevice(ctx, &pb.GetDeviceReq{DeviceId: deviceId})
+	resp, err := rpc.LogicIntClient.GetDevice(ctx, &pb.GetDeviceReq{DeviceId: deviceId})
 	if err != nil {
 		return 0, "", err
 	}

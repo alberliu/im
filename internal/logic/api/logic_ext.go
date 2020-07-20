@@ -13,13 +13,13 @@ import (
 type LogicExtServer struct{}
 
 // RegisterDevice 注册设备
-func (*LogicExtServer) RegisterDevice(ctx context.Context, req *pb.RegisterDeviceReq) (*pb.RegisterDeviceResp, error) {
+func (*LogicExtServer) RegisterDevice(ctx context.Context, in *pb.RegisterDeviceReq) (*pb.RegisterDeviceResp, error) {
 	device := model.Device{
-		Type:          req.Type,
-		Brand:         req.Brand,
-		Model:         req.Model,
-		SystemVersion: req.SystemVersion,
-		SDKVersion:    req.SdkVersion,
+		Type:          in.Type,
+		Brand:         in.Brand,
+		Model:         in.Model,
+		SystemVersion: in.SystemVersion,
+		SDKVersion:    in.SdkVersion,
 	}
 
 	if device.Type == 0 || device.Brand == "" || device.Model == "" ||
@@ -35,7 +35,7 @@ func (*LogicExtServer) RegisterDevice(ctx context.Context, req *pb.RegisterDevic
 }
 
 // SendMessage 发送消息
-func (*LogicExtServer) SendMessage(ctx context.Context, req *pb.SendMessageReq) (*pb.SendMessageResp, error) {
+func (*LogicExtServer) SendMessage(ctx context.Context, in *pb.SendMessageReq) (*pb.SendMessageResp, error) {
 	userId, deviceId, err := grpclib.GetCtxData(ctx)
 	if err != nil {
 		return nil, err
@@ -46,48 +46,71 @@ func (*LogicExtServer) SendMessage(ctx context.Context, req *pb.SendMessageReq) 
 		SenderId:   userId,
 		DeviceId:   deviceId,
 	}
-	err = service.MessageService.Send(ctx, sender, *req)
+	seq, err := service.MessageService.Send(ctx, sender, *in)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.SendMessageResp{}, nil
+	return &pb.SendMessageResp{Seq: seq}, nil
+}
+
+func (s *LogicExtServer) AddFriend(ctx context.Context, in *pb.AddFriendReq) (*pb.AddFriendResp, error) {
+	userId, _, err := grpclib.GetCtxData(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = service.FriendService.AddFriend(ctx, userId, in.FriendId, in.Remarks, in.Description)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.AddFriendResp{}, nil
+}
+
+func (s *LogicExtServer) AgreeAddFriend(ctx context.Context, in *pb.AgreeAddFriendReq) (*pb.AgreeAddFriendResp, error) {
+	userId, _, err := grpclib.GetCtxData(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = service.FriendService.AgreeAddFriend(ctx, userId, in.UserId, in.Remarks)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.AgreeAddFriendResp{}, nil
+}
+
+func (s *LogicExtServer) GetFriends(ctx context.Context, in *pb.GetFriendsReq) (*pb.GetFriendsResp, error) {
+	userId, _, err := grpclib.GetCtxData(ctx)
+	friends, err := service.FriendService.List(ctx, userId)
+	return &pb.GetFriendsResp{Friends: friends}, err
 }
 
 // CreateGroup 创建群组
-func (*LogicExtServer) CreateGroup(ctx context.Context, req *pb.CreateGroupReq) (*pb.CreateGroupResp, error) {
-	var group = model.Group{
-		Name:         req.Group.Name,
-		Introduction: req.Group.Introduction,
-		Type:         req.Group.Type,
-		Extra:        req.Group.Extra,
-	}
-	err := service.GroupService.Create(ctx, group)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.CreateGroupResp{}, nil
+func (*LogicExtServer) CreateGroup(ctx context.Context, in *pb.CreateGroupReq) (*pb.CreateGroupResp, error) {
+	groupId, err := service.GroupService.Create(ctx, model.Group{
+		Name:         in.Name,
+		Introduction: in.Introduction,
+		Type:         in.Type,
+		Extra:        in.Extra,
+	})
+	return &pb.CreateGroupResp{GroupId: groupId}, err
 }
 
 // UpdateGroup 更新群组
-func (*LogicExtServer) UpdateGroup(ctx context.Context, req *pb.UpdateGroupReq) (*pb.UpdateGroupResp, error) {
-
-	var group = model.Group{
-		Id:           req.Group.GroupId,
-		Name:         req.Group.Name,
-		Introduction: req.Group.Introduction,
-		Type:         req.Group.Type,
-		Extra:        req.Group.Extra,
-	}
-	err := service.GroupService.Update(ctx, group)
-	if err != nil {
-		return nil, err
-	}
-	return &pb.UpdateGroupResp{}, nil
+func (*LogicExtServer) UpdateGroup(ctx context.Context, in *pb.UpdateGroupReq) (*pb.UpdateGroupResp, error) {
+	return &pb.UpdateGroupResp{}, service.GroupService.Update(ctx, model.Group{
+		Id:           in.GroupId,
+		Name:         in.Name,
+		Introduction: in.Introduction,
+		Extra:        in.Extra,
+	})
 }
 
 // GetGroup 获取群组信息
-func (*LogicExtServer) GetGroup(ctx context.Context, req *pb.GetGroupReq) (*pb.GetGroupResp, error) {
-	group, err := service.GroupService.Get(ctx, req.GroupId)
+func (*LogicExtServer) GetGroup(ctx context.Context, in *pb.GetGroupReq) (*pb.GetGroupResp, error) {
+	group, err := service.GroupService.Get(ctx, in.GroupId)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +163,7 @@ func (*LogicExtServer) GetUserGroups(ctx context.Context, in *pb.GetUserGroupsRe
 
 // AddGroupMember 添加群组成员
 func (*LogicExtServer) AddGroupMember(ctx context.Context, in *pb.AddGroupMemberReq) (*pb.AddGroupMemberResp, error) {
-	err := service.GroupService.AddUser(ctx, in.GroupUser.GroupId, in.GroupUser.UserId, in.GroupUser.Label, in.GroupUser.Extra)
+	err := service.GroupService.AddUser(ctx, in.GroupId, in.UserId, in.Remarks, in.Extra)
 	if err != nil {
 		logger.Sugar.Error(err)
 		return nil, err
@@ -151,7 +174,7 @@ func (*LogicExtServer) AddGroupMember(ctx context.Context, in *pb.AddGroupMember
 
 // UpdateGroupMember 更新群组成员信息
 func (*LogicExtServer) UpdateGroupMember(ctx context.Context, in *pb.UpdateGroupMemberReq) (*pb.UpdateGroupMemberResp, error) {
-	err := service.GroupService.UpdateUser(ctx, in.GroupUser.GroupId, in.GroupUser.UserId, in.GroupUser.Label, in.GroupUser.Extra)
+	err := service.GroupService.UpdateUser(ctx, in.GroupId, in.UserId, in.Remarks, in.Extra)
 	if err != nil {
 		return nil, err
 	}
@@ -167,4 +190,10 @@ func (*LogicExtServer) DeleteGroupMember(ctx context.Context, in *pb.DeleteGroup
 	}
 
 	return &pb.DeleteGroupMemberResp{}, nil
+}
+
+// GetGroupMembers 获取群组成员信息
+func (s *LogicExtServer) GetGroupMembers(ctx context.Context, in *pb.GetGroupMembersReq) (*pb.GetGroupMembersResp, error) {
+	members, err := service.GroupService.GetUsers(ctx, in.GroupId)
+	return &pb.GetGroupMembersResp{Members: members}, err
 }

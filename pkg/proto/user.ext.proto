@@ -3,20 +3,14 @@ package pb;
 
 import "user.int.proto";
 
-message SignInReq{
+message SignInReq {
     string phone_number = 1;
     string code = 2;
     int64 device_id = 3;
 }
-message SignInResp{
+message SignInResp {
     int64 user_id = 1;
     string token = 2;
-}
-
-message GetUserReq {
-}
-message GetUserResp {
-    User user = 1; // 用户信息
 }
 
 service UserExt {

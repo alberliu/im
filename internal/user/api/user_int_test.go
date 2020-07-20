@@ -19,8 +19,8 @@ func getUserIntClient() pb.UserIntClient {
 
 func TestUserIntServer_Auth(t *testing.T) {
 	_, err := getUserIntClient().Auth(getCtx(), &pb.AuthReq{
-		UserId:   9,
-		DeviceId: 19,
+		UserId:   3,
+		DeviceId: 1,
 		Token:    "0",
 	})
 	fmt.Println(err)
@@ -28,10 +28,14 @@ func TestUserIntServer_Auth(t *testing.T) {
 
 func TestUserIntServer_GetUsers(t *testing.T) {
 	resp, err := getUserIntClient().GetUsers(getCtx(), &pb.GetUsersReq{
-		UserIds: []int64{1},
+		UserIds: []int64{1, 2, 3},
 	})
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
-	fmt.Printf("%+v", resp)
+
+	for k, v := range resp.Users {
+		fmt.Printf("%+-5v  %+v\n", k, v)
+	}
 }

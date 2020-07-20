@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	CtxAppId     = "app_id"
 	CtxUserId    = "user_id"
 	CtxDeviceId  = "device_id"
 	CtxToken     = "token"
@@ -74,27 +73,26 @@ func GetCtxData(ctx context.Context) (int64, int64, error) {
 	return userId, deviceId, nil
 }
 
-// GetCtxAppId 获取ctx的app_id
-func GetCtxAppId(ctx context.Context) (int64, error) {
+// GetCtxDeviceId 获取ctx的设备id
+func GetCtxDeviceId(ctx context.Context) (int64, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return 0, gerrors.ErrUnauthorized
 	}
 
-	tokens, ok := md[CtxAppId]
-	if !ok && len(tokens) == 0 {
+	deviceIdStrs, ok := md[CtxDeviceId]
+	if !ok && len(deviceIdStrs) == 0 {
 		return 0, gerrors.ErrUnauthorized
 	}
-	appId, err := strconv.ParseInt(tokens[0], 10, 64)
+	deviceId, err := strconv.ParseInt(deviceIdStrs[0], 10, 64)
 	if err != nil {
 		logger.Sugar.Error(err)
 		return 0, gerrors.ErrUnauthorized
 	}
-
-	return appId, nil
+	return deviceId, nil
 }
 
-// GetCtxAppId 获取ctx的token
+// GetCtxToken 获取ctx的token
 func GetCtxToken(ctx context.Context) (string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
