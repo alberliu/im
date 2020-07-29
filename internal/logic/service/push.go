@@ -18,10 +18,11 @@ type pushService struct{}
 
 var PushService = new(pushService)
 
-func (s *pushService) Push(ctx context.Context, userId int64, code pb.PushCode, message proto.Message, isPersist bool) error {
+func (s *pushService) PushToUser(ctx context.Context, userId int64, code pb.PushCode, message proto.Message, isPersist bool) error {
 	logger.Logger.Debug("push",
 		zap.Int64("request_id", grpclib.GetCtxRequstId(ctx)),
-		zap.Int64("ser_id", userId),
+		zap.Int64("user_id", userId),
+		zap.Int32("code", int32(code)),
 		zap.Any("message", message))
 
 	messageBuf, err := proto.Marshal(message)
@@ -56,9 +57,10 @@ func (s *pushService) Push(ctx context.Context, userId int64, code pb.PushCode, 
 }
 
 func (s *pushService) PushToGroup(ctx context.Context, groupId int64, code pb.PushCode, message proto.Message, isPersist bool) error {
-	logger.Logger.Debug("push",
+	logger.Logger.Debug("push_to_group",
 		zap.Int64("request_id", grpclib.GetCtxRequstId(ctx)),
 		zap.Int64("group_id", groupId),
+		zap.Int32("code", int32(code)),
 		zap.Any("message", message))
 
 	messageBuf, err := proto.Marshal(message)

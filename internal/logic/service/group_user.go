@@ -131,10 +131,19 @@ func (*groupUserService) DeleteUser(ctx context.Context, optId, groupId, userId 
 	if err != nil {
 		return err
 	}
-
 	if group == nil {
 		return gerrors.ErrGroupNotExist
 	}
+
+	userResp, err := rpc.UserIntClient.GetUser(ctx, &pb.GetUserReq{UserId: optId})
+	if err != nil {
+		return err
+	}
+	PushService.PushToGroup(ctx, groupId, pb.PushCode_PC_REMOVE_GROUP_MEMBER, &pb.RemoveGroupMemberPush{
+		UserId:        optId,
+		Nickname:      userResp.User.Nickname,
+		DeletedUserId: userId,
+	}, true)
 
 	if group.Type == pb.GroupType_GT_SMALL {
 		err = SmallGroupUserService.DeleteUser(ctx, groupId, userId)
@@ -148,16 +157,5 @@ func (*groupUserService) DeleteUser(ctx context.Context, optId, groupId, userId 
 			return err
 		}
 	}
-
-	userResp, err := rpc.UserIntClient.GetUser(ctx, &pb.GetUserReq{UserId: optId})
-	if err != nil {
-		return err
-	}
-
-	PushService.PushToGroup(ctx, groupId, pb.PushCode_PC_REMOVE_GROUP_MEMBER, &pb.RemoveGroupMemberPush{
-		UserId:        optId,
-		Nickname:      userResp.User.Nickname,
-		DeletedUserId: userId,
-	}, true)
 	return nil
 }

@@ -66,7 +66,7 @@ func (*friendService) AddFriend(ctx context.Context, userId, friendId int64, rem
 		return err
 	}
 
-	PushService.Push(ctx, friendId, pb.PushCode_PC_ADD_FRIEND, &pb.AddFriendPush{
+	PushService.PushToUser(ctx, friendId, pb.PushCode_PC_ADD_FRIEND, &pb.AddFriendPush{
 		FriendId:    userId,
 		Nickname:    resp.User.Nickname,
 		AvatarUrl:   resp.User.AvatarUrl,
@@ -108,7 +108,7 @@ func (*friendService) AgreeAddFriend(ctx context.Context, userId, friendId int64
 		return err
 	}
 
-	PushService.Push(ctx, friendId, pb.PushCode_PC_AGREE_ADD_FRIEND, &pb.AgreeAddFriendPush{
+	PushService.PushToUser(ctx, friendId, pb.PushCode_PC_AGREE_ADD_FRIEND, &pb.AgreeAddFriendPush{
 		FriendId:  userId,
 		Nickname:  resp.User.Nickname,
 		AvatarUrl: resp.User.AvatarUrl,
