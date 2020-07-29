@@ -77,7 +77,7 @@ func (*messageService) SendToFriend(ctx context.Context, sender model.Sender, re
 
 // SendToGroup 消息发送至群组（使用写扩散）
 func (*messageService) SendToGroup(ctx context.Context, sender model.Sender, req pb.SendMessageReq) (int64, error) {
-	users, err := GroupUserService.GetUsers(ctx, req.ReceiverId)
+	users, err := SmallGroupUserService.GetUsers(ctx, req.ReceiverId)
 	if err != nil {
 		return 0, err
 	}

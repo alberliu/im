@@ -6,7 +6,6 @@ import (
 	"im/pkg/gerrors"
 	"im/pkg/grpclib"
 	"im/pkg/logger"
-	"im/pkg/util"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -19,20 +18,9 @@ const (
 	ExtServerName = "user_ext"
 )
 
-func logPanic(serverName string, ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, err *error) {
-	p := recover()
-	if p != nil {
-		logger.Logger.Error(serverName+" panic", zap.Any("info", info), zap.Any("ctx", ctx), zap.Any("req", req),
-			zap.Any("panic", p), zap.String("stack", util.GetStackInfo()))
-		*err = gerrors.ErrUnknown
-	}
-}
-
 // 服务器端的单向调用的拦截器
 func UserIntInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	defer func() {
-		logPanic(IntServerName, ctx, req, info, &err)
-	}()
+	defer gerrors.LogPanic(IntServerName, ctx, req, info, &err)
 
 	resp, err = handler(ctx, req)
 	logger.Logger.Debug(IntServerName, zap.Any("info", info), zap.Any("req", req), zap.Any("resp", resp), zap.Error(err))
@@ -48,11 +36,9 @@ func UserIntInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 
 // 服务器端的单向调用的拦截器
 func UserExtInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	defer func() {
-		logPanic(ExtServerName, ctx, req, info, &err)
-	}()
+	defer gerrors.LogPanic(ExtServerName, ctx, req, info, &err)
 
-	resp, err = doLogicClientExt(ctx, req, info, handler)
+	resp, err = doLogicExt(ctx, req, info, handler)
 	logger.Logger.Debug(ExtServerName, zap.Any("info", info), zap.Any("ctx", ctx), zap.Any("req", req),
 		zap.Any("resp", resp), zap.Error(err))
 
@@ -65,7 +51,7 @@ func UserExtInterceptor(ctx context.Context, req interface{}, info *grpc.UnarySe
 	return
 }
 
-func doLogicClientExt(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func doLogicExt(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	if info.FullMethod != "/pb.UserExt/SignIn" {
 		userId, deviceId, err := grpclib.GetCtxData(ctx)
 		if err != nil {

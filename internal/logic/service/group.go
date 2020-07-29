@@ -5,7 +5,6 @@ import (
 	"im/internal/logic/cache"
 	"im/internal/logic/dao"
 	"im/internal/logic/model"
-	"im/pkg/gerrors"
 	"im/pkg/pb"
 	"im/pkg/rpc"
 )
@@ -40,7 +39,7 @@ func (*groupService) Create(ctx context.Context, group model.Group) (int64, erro
 }
 
 // Update 更新群组
-func (*groupService) Update(ctx context.Context, group model.Group) error {
+func (*groupService) Update(ctx context.Context, userId int64, group model.Group) error {
 	err := dao.GroupDao.Update(group.Id, group.Name, group.Introduction, group.Extra)
 	if err != nil {
 		return err
@@ -49,83 +48,18 @@ func (*groupService) Update(ctx context.Context, group model.Group) error {
 	if err != nil {
 		return err
 	}
-	return nil
-}
 
-// AddUser 给群组添加用户
-func (*groupService) AddUser(ctx context.Context, groupId, userId int64, remarks, extra string) error {
-	group, err := GroupService.Get(ctx, groupId)
+	userResp, err := rpc.UserIntClient.GetUser(ctx, &pb.GetUserReq{UserId: userId})
 	if err != nil {
 		return err
 	}
-	if group == nil {
-		return gerrors.ErrGroupNotExist
-	}
-
-	if group.Type == model.GroupTypeGroup {
-		err = GroupUserService.AddUser(ctx, groupId, userId, remarks, extra)
-		if err != nil {
-			return err
-		}
-	}
-	if group.Type == model.GroupTypeChatRoom {
-		err = cache.LargeGroupUserCache.Set(groupId, userId, remarks, extra)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// UpdateUser 更新群组用户
-func (*groupService) UpdateUser(ctx context.Context, groupId, userId int64, label, extra string) error {
-	group, err := GroupService.Get(ctx, groupId)
-	if err != nil {
-		return err
-	}
-
-	if group == nil {
-		return gerrors.ErrGroupNotExist
-	}
-
-	if group.Type == model.GroupTypeGroup {
-		err = GroupUserService.Update(ctx, groupId, userId, label, extra)
-		if err != nil {
-			return err
-		}
-	}
-	if group.Type == model.GroupTypeChatRoom {
-		err = cache.LargeGroupUserCache.Set(groupId, userId, label, extra)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// DeleteUser 删除用户群组
-func (*groupService) DeleteUser(ctx context.Context, groupId, userId int64) error {
-	group, err := GroupService.Get(ctx, groupId)
-	if err != nil {
-		return err
-	}
-
-	if group == nil {
-		return gerrors.ErrGroupNotExist
-	}
-
-	if group.Type == model.GroupTypeGroup {
-		err = GroupUserService.DeleteUser(ctx, groupId, userId)
-		if err != nil {
-			return err
-		}
-	}
-	if group.Type == model.GroupTypeChatRoom {
-		err = cache.LargeGroupUserCache.Del(groupId, userId)
-		if err != nil {
-			return err
-		}
-	}
+	PushService.PushToGroup(ctx, group.Id, pb.PushCode_PC_UPDATE_GROUP, &pb.UpdateGroupPush{
+		UserId:       userId,
+		Nickname:     userResp.User.Nickname,
+		Name:         group.Name,
+		Introduction: group.Introduction,
+		Extra:        group.Extra,
+	}, true)
 	return nil
 }
 
@@ -138,11 +72,11 @@ func (s *groupService) GetUsers(ctx context.Context, groupId int64) ([]*pb.Group
 	if group == nil {
 		return nil, nil
 	}
-	if group.Type != model.GroupTypeGroup {
+	if group.Type != pb.GroupType_GT_SMALL {
 		return nil, nil
 	}
 
-	members, err := GroupUserService.GetUsers(ctx, groupId)
+	members, err := SmallGroupUserService.GetUsers(ctx, groupId)
 	if err != nil {
 		return nil, err
 	}

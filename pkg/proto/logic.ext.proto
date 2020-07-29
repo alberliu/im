@@ -60,7 +60,7 @@ message GetFriendsResp {
 message CreateGroupReq {
     string name = 1; // 名称
     string introduction = 2; // 简介
-    int32 type = 3; // 群组类型
+    GroupType type = 3; // 群组类型
     string extra = 4; // 附加字段
 }
 message CreateGroupResp {
@@ -88,11 +88,18 @@ message Group {
     string name = 2; // 名称
     string introduction = 3; // 简介
     int32 user_mum = 4; // 用户数
-    int32 type = 5; // 群组类型
+    GroupType type = 5; // 群组类型
     string extra = 6; // 附加字段
     int64 create_time = 7; // 创建时间
     int64 update_time = 8; // 更新时间
 }
+
+enum GroupType {
+    GT_UNKNOWN = 0;
+    GT_SMALL = 1; // 小群组
+    GT_LARGE = 2; // 大群组
+}
+
 
 message GetUserGroupsReq {
 }
@@ -100,19 +107,12 @@ message GetUserGroupsResp {
     repeated Group groups = 1;
 }
 
-// 群组用户
-message GroupUser {
-    string label = 3; // 标签
-    string extra = 4; // 附加属性
-}
-
-message AddGroupMemberReq {
+message AddGroupMembersReq {
     int64 group_id = 1; // 群组id
-    int64 user_id = 2; // 用户id
-    string remarks = 3; // 备注
-    string extra = 4; // 附加字段
+    repeated int64 user_ids = 2; // 用户id列表
 }
-message AddGroupMemberResp {
+message AddGroupMembersResp {
+    repeated int64 user_ids = 1; // 已经在群组的用户id列表
 }
 
 message UpdateGroupMemberReq {
@@ -131,13 +131,13 @@ message DeleteGroupMemberReq {
 message DeleteGroupMemberResp {
 }
 
-message GetGroupMembersReq{
+message GetGroupMembersReq {
     int64 group_id = 1;
 }
-message GetGroupMembersResp{
+message GetGroupMembersResp {
     repeated GroupMember members = 1;
 }
-message GroupMember{
+message GroupMember {
     int64 user_id = 1;
     string nickname = 2; // 昵称
     int32 sex = 3; // 性别
@@ -171,11 +171,11 @@ service LogicExt {
     rpc GetUserGroups (GetUserGroupsReq) returns (GetUserGroupsResp);
 
     // 添加群组成员
-    rpc AddGroupMember (AddGroupMemberReq) returns (AddGroupMemberResp);
+    rpc AddGroupMembers (AddGroupMembersReq) returns (AddGroupMembersResp);
     // 更新群组成员信息
     rpc UpdateGroupMember (UpdateGroupMemberReq) returns (UpdateGroupMemberResp);
     // 添加群组成员
     rpc DeleteGroupMember (DeleteGroupMemberReq) returns (DeleteGroupMemberResp);
     // 获取群组成员
-    rpc GetGroupMembers(GetGroupMembersReq)returns(GetGroupMembersResp);
+    rpc GetGroupMembers (GetGroupMembersReq) returns (GetGroupMembersResp);
 }

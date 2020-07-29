@@ -6,7 +6,6 @@ import (
 	"im/pkg/gerrors"
 	"im/pkg/grpclib"
 	"im/pkg/logger"
-	"im/pkg/util"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -14,20 +13,9 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func logPanic(serverName string, ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, err *error) {
-	p := recover()
-	if p != nil {
-		logger.Logger.Error(serverName+" panic", zap.Any("info", info), zap.Any("ctx", ctx), zap.Any("req", req),
-			zap.Any("panic", p), zap.String("stack", util.GetStackInfo()))
-		*err = gerrors.ErrUnknown
-	}
-}
-
 // 服务器端的单向调用的拦截器
 func LogicIntInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	defer func() {
-		logPanic("logic_int_interceptor", ctx, req, info, &err)
-	}()
+	defer gerrors.LogPanic("logic_int_interceptor", ctx, req, info, &err)
 
 	resp, err = handler(ctx, req)
 	logger.Logger.Debug("logic_int_interceptor", zap.Any("info", info), zap.Any("req", req), zap.Any("resp", resp), zap.Error(err))
@@ -42,19 +30,17 @@ func LogicIntInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryS
 }
 
 // 服务器端的单向调用的拦截器
-func LogicClientExtInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	defer func() {
-		logPanic("logic_client_ext_interceptor", ctx, req, info, &err)
-	}()
+func LogicExtInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	defer gerrors.LogPanic("logic_ext_interceptor", ctx, req, info, &err)
 
 	resp, err = doLogicClientExt(ctx, req, info, handler)
-	logger.Logger.Debug("logic_client_ext_interceptor", zap.Any("info", info), zap.Any("ctx", ctx), zap.Any("req", req),
+	logger.Logger.Debug("logic_ext_interceptor", zap.Any("info", info), zap.Any("ctx", ctx), zap.Any("req", req),
 		zap.Any("resp", resp), zap.Error(err))
 
 	s, _ := status.FromError(err)
 	if s.Code() != 0 && s.Code() < 1000 {
 		md, _ := metadata.FromIncomingContext(ctx)
-		logger.Logger.Error("logic_client_ext_interceptor", zap.String("method", info.FullMethod), zap.Any("md", md), zap.Any("req", req),
+		logger.Logger.Error("logic_ext_interceptor", zap.String("method", info.FullMethod), zap.Any("md", md), zap.Any("req", req),
 			zap.Any("resp", resp), zap.Error(err), zap.String("stack", gerrors.GetErrorStack(s)))
 	}
 	return

@@ -189,9 +189,8 @@ func startServer {
 }
 
 func LogicClientExtInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-	defer func() {
-		logPanic("logic_client_ext_interceptor", ctx, req, info, &err)
-	}()
+	defer logPanic("logic_client_ext_interceptor", ctx, req, info, &err)
+	
 
 	resp, err = handler(ctx, req)
 	logger.Logger.Debug("logic_client_ext_interceptor", zap.Any("info", info), zap.Any("ctx", ctx), zap.Any("req", req),

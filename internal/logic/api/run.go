@@ -33,7 +33,7 @@ func StartRpcServer() {
 		if err != nil {
 			panic(err)
 		}
-		extServer := grpc.NewServer(grpc.UnaryInterceptor(LogicClientExtInterceptor))
+		extServer := grpc.NewServer(grpc.UnaryInterceptor(LogicExtInterceptor))
 		pb.RegisterLogicExtServer(extServer, &LogicExtServer{})
 		err = extServer.Serve(extListen)
 		if err != nil {

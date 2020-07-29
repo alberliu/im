@@ -100,7 +100,12 @@ func (*LogicExtServer) CreateGroup(ctx context.Context, in *pb.CreateGroupReq) (
 
 // UpdateGroup 更新群组
 func (*LogicExtServer) UpdateGroup(ctx context.Context, in *pb.UpdateGroupReq) (*pb.UpdateGroupResp, error) {
-	return &pb.UpdateGroupResp{}, service.GroupService.Update(ctx, model.Group{
+	userId, _, err := grpclib.GetCtxData(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.UpdateGroupResp{}, service.GroupService.Update(ctx, userId, model.Group{
 		Id:           in.GroupId,
 		Name:         in.Name,
 		Introduction: in.Introduction,
@@ -140,7 +145,7 @@ func (*LogicExtServer) GetUserGroups(ctx context.Context, in *pb.GetUserGroupsRe
 		return nil, err
 	}
 
-	groups, err := service.GroupUserService.ListByUserId(ctx, userId)
+	groups, err := service.SmallGroupUserService.ListByUserId(ctx, userId)
 	if err != nil {
 		logger.Sugar.Error(err)
 		return nil, err
@@ -161,20 +166,19 @@ func (*LogicExtServer) GetUserGroups(ctx context.Context, in *pb.GetUserGroupsRe
 	return &pb.GetUserGroupsResp{Groups: pbGroups}, err
 }
 
-// AddGroupMember 添加群组成员
-func (*LogicExtServer) AddGroupMember(ctx context.Context, in *pb.AddGroupMemberReq) (*pb.AddGroupMemberResp, error) {
-	err := service.GroupService.AddUser(ctx, in.GroupId, in.UserId, in.Remarks, in.Extra)
+func (s *LogicExtServer) AddGroupMembers(ctx context.Context, in *pb.AddGroupMembersReq) (*pb.AddGroupMembersResp, error) {
+	userId, _, err := grpclib.GetCtxData(ctx)
 	if err != nil {
-		logger.Sugar.Error(err)
 		return nil, err
 	}
 
-	return &pb.AddGroupMemberResp{}, nil
+	userIds, err := service.GroupUserService.AddUsers(ctx, userId, in.GroupId, in.UserIds)
+	return &pb.AddGroupMembersResp{UserIds: userIds}, err
 }
 
 // UpdateGroupMember 更新群组成员信息
 func (*LogicExtServer) UpdateGroupMember(ctx context.Context, in *pb.UpdateGroupMemberReq) (*pb.UpdateGroupMemberResp, error) {
-	err := service.GroupService.UpdateUser(ctx, in.GroupId, in.UserId, in.Remarks, in.Extra)
+	err := service.GroupUserService.UpdateUser(ctx, in.GroupId, in.UserId, in.Remarks, in.Extra)
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +188,12 @@ func (*LogicExtServer) UpdateGroupMember(ctx context.Context, in *pb.UpdateGroup
 
 // DeleteGroupMember 添加群组成员
 func (*LogicExtServer) DeleteGroupMember(ctx context.Context, in *pb.DeleteGroupMemberReq) (*pb.DeleteGroupMemberResp, error) {
-	err := service.GroupService.DeleteUser(ctx, in.GroupId, in.UserId)
+	userId, _, err := grpclib.GetCtxData(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	err = service.GroupUserService.DeleteUser(ctx, userId, in.GroupId, in.UserId)
 	if err != nil {
 		return nil, err
 	}
