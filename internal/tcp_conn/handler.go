@@ -6,18 +6,20 @@ import (
 	"im/pkg/grpclib"
 	"im/pkg/logger"
 	"im/pkg/pb"
-	"im/pkg/rpc"
+	"im/pkg/rpc_cli"
 
 	"github.com/alberliu/gn"
 	"github.com/golang/protobuf/proto"
 	"go.uber.org/zap"
-	"google.golang.org/grpc/status"
 )
 
 type ConnData struct {
-	UserId   int64
-	DeviceId int64
+	AppId    int64 // AppId
+	DeviceId int64 // 设备id
+	UserId   int64 // 用户id
 }
+
+const PreConn = -1 // 设备第二次重连时，标记设备的上一条连接
 
 type handler struct{}
 
@@ -26,6 +28,7 @@ var Handler = new(handler)
 func (*handler) OnConnect(c *gn.Conn) {
 	logger.Logger.Debug("connect:", zap.Int("fd", c.GetFd()), zap.String("addr", c.GetAddr()))
 }
+
 func (h *handler) OnMessage(c *gn.Conn, bytes []byte) {
 	var input pb.Input
 	err := proto.Unmarshal(bytes, &input)
@@ -54,51 +57,19 @@ func (h *handler) OnMessage(c *gn.Conn, bytes []byte) {
 	}
 	return
 }
+
 func (*handler) OnClose(c *gn.Conn, err error) {
 	logger.Logger.Debug("close", zap.Any("data", c.GetData()), zap.Error(err))
 	data := c.GetData().(ConnData)
-	_, _ = rpc.LogicIntClient.Offline(context.TODO(), &pb.OfflineReq{
+	_, _ = rpc_cli.LogicIntClient.Offline(context.TODO(), &pb.OfflineReq{
+		AppId:    data.AppId,
 		UserId:   data.UserId,
 		DeviceId: data.DeviceId,
 	})
 }
 
-func (h *handler) Send(c *gn.Conn, pt pb.PackageType, requestId int64, err error, message proto.Message) {
-	var output = pb.Output{
-		Type:      pt,
-		RequestId: requestId,
-	}
-
-	if err != nil {
-		status, _ := status.FromError(err)
-		output.Code = int32(status.Code())
-		output.Message = status.Message()
-	}
-
-	if message != nil {
-		msgBytes, err := proto.Marshal(message)
-		if err != nil {
-			logger.Sugar.Error(err)
-			return
-		}
-		output.Data = msgBytes
-	}
-
-	outputBytes, err := proto.Marshal(&output)
-	if err != nil {
-		logger.Sugar.Error(err)
-		return
-	}
-
-	err = gn.EncodeToFD(c.GetFd(), outputBytes)
-	if err != nil {
-		logger.Sugar.Error(err)
-		return
-	}
-}
-
 // SignIn 登录
-func (h *handler) SignIn(c *gn.Conn, input pb.Input) {
+func (*handler) SignIn(c *gn.Conn, input pb.Input) {
 	var signIn pb.SignInInput
 	err := proto.Unmarshal(input.Data, &signIn)
 	if err != nil {
@@ -106,28 +77,27 @@ func (h *handler) SignIn(c *gn.Conn, input pb.Input) {
 		return
 	}
 
-	_, err = rpc.LogicIntClient.ConnSignIn(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.ConnSignInReq{
+	_, err = rpc_cli.LogicIntClient.SignIn(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.SignInReq{
+		AppId:    signIn.AppId,
 		UserId:   signIn.UserId,
 		DeviceId: signIn.DeviceId,
 		Token:    signIn.Token,
-		ConnAddr: config.TCPConn.LocalAddr,
+		ConnAddr: config.TCPConnConf.LocalAddr,
 		ConnFd:   int64(c.GetFd()),
 	})
 
-	h.Send(c, pb.PackageType_PT_SIGN_IN, input.RequestId, err, nil)
-	if err != nil {
-		return
-	}
+	send(c, pb.PackageType_PT_SIGN_IN, input.RequestId, err, nil)
 
 	data := ConnData{
-		UserId:   signIn.UserId,
-		DeviceId: signIn.DeviceId,
+		AppId:    signIn.AppId,
+		DeviceId: signIn.UserId,
+		UserId:   signIn.DeviceId,
 	}
 	c.SetData(data)
 }
 
 // Sync 消息同步
-func (h *handler) Sync(c *gn.Conn, input pb.Input) {
+func (*handler) Sync(c *gn.Conn, input pb.Input) {
 	var sync pb.SyncInput
 	err := proto.Unmarshal(input.Data, &sync)
 	if err != nil {
@@ -136,7 +106,8 @@ func (h *handler) Sync(c *gn.Conn, input pb.Input) {
 	}
 
 	data := c.GetData().(ConnData)
-	resp, err := rpc.LogicIntClient.Sync(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.SyncReq{
+	resp, err := rpc_cli.LogicIntClient.Sync(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.SyncReq{
+		AppId:    data.AppId,
 		UserId:   data.UserId,
 		DeviceId: data.DeviceId,
 		Seq:      sync.Seq,
@@ -146,13 +117,13 @@ func (h *handler) Sync(c *gn.Conn, input pb.Input) {
 	if err == nil {
 		message = &pb.SyncOutput{Messages: resp.Messages}
 	}
-	h.Send(c, pb.PackageType_PT_SYNC, input.RequestId, err, message)
+	send(c, pb.PackageType_PT_SYNC, input.RequestId, err, message)
 }
 
 // Heartbeat 心跳
-func (h *handler) Heartbeat(c *gn.Conn, input pb.Input) {
-	h.Send(c, pb.PackageType_PT_HEARTBEAT, input.RequestId, nil, nil)
+func (*handler) Heartbeat(c *gn.Conn, input pb.Input) {
 	data := c.GetData().(ConnData)
+	send(c, pb.PackageType_PT_HEARTBEAT, input.RequestId, nil, nil)
 	logger.Sugar.Infow("heartbeat", "device_id", data.DeviceId, "user_id", data.UserId)
 }
 
@@ -166,7 +137,8 @@ func (*handler) MessageACK(c *gn.Conn, input pb.Input) {
 	}
 
 	data := c.GetData().(ConnData)
-	_, _ = rpc.LogicIntClient.MessageACK(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.MessageACKReq{
+	_, _ = rpc_cli.LogicIntClient.MessageACK(grpclib.ContextWithRequstId(context.TODO(), input.RequestId), &pb.MessageACKReq{
+		AppId:       data.AppId,
 		UserId:      data.UserId,
 		DeviceId:    data.DeviceId,
 		DeviceAck:   messageACK.DeviceAck,

@@ -14,7 +14,7 @@ func StartRpcServer() {
 	go func() {
 		defer util.RecoverPanic()
 
-		intListen, err := net.Listen("tcp", config.Logic.RPCIntListenAddr)
+		intListen, err := net.Listen("tcp", config.LogicConf.RPCIntListenAddr)
 		if err != nil {
 			panic(err)
 		}
@@ -29,16 +29,30 @@ func StartRpcServer() {
 	go func() {
 		defer util.RecoverPanic()
 
-		extListen, err := net.Listen("tcp", config.Logic.RPCExtListenAddr)
+		extListen, err := net.Listen("tcp", config.LogicConf.ClientRPCExtListenAddr)
 		if err != nil {
 			panic(err)
 		}
-		extServer := grpc.NewServer(grpc.UnaryInterceptor(LogicExtInterceptor))
-		pb.RegisterLogicExtServer(extServer, &LogicExtServer{})
+		extServer := grpc.NewServer(grpc.UnaryInterceptor(LogicClientExtInterceptor))
+		pb.RegisterLogicClientExtServer(extServer, &LogicClientExtServer{})
 		err = extServer.Serve(extListen)
 		if err != nil {
 			panic(err)
 		}
 	}()
 
+	go func() {
+		defer util.RecoverPanic()
+
+		intListen, err := net.Listen("tcp", config.LogicConf.ServerRPCExtListenAddr)
+		if err != nil {
+			panic(err)
+		}
+		intServer := grpc.NewServer(grpc.UnaryInterceptor(LogicServerExtInterceptor))
+		pb.RegisterLogicServerExtServer(intServer, &LogicServerExtServer{})
+		err = intServer.Serve(intListen)
+		if err != nil {
+			panic(err)
+		}
+	}()
 }

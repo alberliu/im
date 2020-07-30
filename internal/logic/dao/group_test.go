@@ -7,12 +7,13 @@ import (
 )
 
 func TestGroupDao_Get(t *testing.T) {
-	group, err := GroupDao.Get(1)
-	fmt.Printf("%+v\n %+v\n", group, err)
+	fmt.Println(GroupDao.Get(1, 1))
 }
 
 func TestGroupDao_Add(t *testing.T) {
 	group := model.Group{
+		AppId:        1,
+		GroupId:      1,
 		Name:         "1",
 		Introduction: "1",
 		Type:         1,
@@ -22,5 +23,9 @@ func TestGroupDao_Add(t *testing.T) {
 }
 
 func TestGroupDao_Update(t *testing.T) {
-	fmt.Println(GroupDao.Update(1, "2", "2", "2"))
+	fmt.Println(GroupDao.Update(1, 1, "2", "2", "3"))
+}
+
+func TestGroupDao_AddUserNum(t *testing.T) {
+	fmt.Println(GroupDao.AddUserNum(1, 1, -1))
 }

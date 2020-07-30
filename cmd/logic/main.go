@@ -3,19 +3,21 @@ package main
 import (
 	"im/config"
 	"im/internal/logic/api"
-	"im/pkg/db"
+	"im/internal/logic/db"
 	"im/pkg/logger"
-	"im/pkg/rpc"
+	"im/pkg/rpc_cli"
+	"im/pkg/util"
 )
 
 func main() {
-	logger.Init()
-	db.InitMysql(config.Logic.MySQL)
-	db.InitRedis(config.Logic.RedisIP, config.Logic.RedisPassword)
+	// 初始化数据库
+	db.InitDB()
+
+	// 初始化自增id配置
+	util.InitUID(db.DBCli)
 
 	// 初始化RpcClient
-	rpc.InitConnIntClient(config.Logic.ConnRPCAddrs)
-	rpc.InitUserIntClient(config.Logic.UserRPCAddrs)
+	rpc_cli.InitConnIntClient(config.LogicConf.ConnRPCAddrs)
 
 	api.StartRpcServer()
 	logger.Logger.Info("logic server start")

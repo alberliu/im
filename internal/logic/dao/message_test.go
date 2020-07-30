@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"encoding/json"
 	"fmt"
 	"im/internal/logic/model"
 	"testing"
@@ -9,28 +10,26 @@ import (
 
 func TestMessageDao_Add(t *testing.T) {
 	message := model.Message{
+		AppId:          2,
 		ObjectType:     1,
 		ObjectId:       1,
-		RequestId:      1,
-		SenderType:     1,
-		SenderId:       1,
-		SenderDeviceId: 1,
-		ReceiverType:   1,
-		ReceiverId:     1,
-		ToUserIds:      "1",
+		SenderType:     2,
+		SenderId:       2,
+		SenderDeviceId: 2,
+		ReceiverType:   2,
+		ReceiverId:     2,
+		ToUserIds:      "2",
 		Type:           1,
-		Content:        []byte("123456"),
+		Content:        "",
 		Seq:            2,
 		SendTime:       time.Now(),
-		Status:         0,
 	}
 	fmt.Println(MessageDao.Add("message", message))
 }
 
 func TestMessageDao_ListByUserIdAndUserSeq(t *testing.T) {
-	messages, err := MessageDao.ListBySeq("message", 1, 1, 0)
+	messages, err := MessageDao.ListBySeq("message", 1, 1, 1, 0)
 	fmt.Println(err)
-	for i := range messages {
-		fmt.Printf("%+v\n", messages[i])
-	}
+	bytes, _ := json.Marshal(messages)
+	fmt.Println(string(bytes))
 }

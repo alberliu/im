@@ -1,8 +1,8 @@
 package cache
 
 import (
+	"im/internal/logic/db"
 	"im/internal/logic/model"
-	"im/pkg/db"
 	"im/pkg/gerrors"
 	"im/pkg/logger"
 	"im/pkg/util"
@@ -20,9 +20,13 @@ type largeGroupUserCache struct{}
 
 var LargeGroupUserCache = new(largeGroupUserCache)
 
+func (*largeGroupUserCache) Key(appId, groupId int64) string {
+	return LargeGroupUserKey + strconv.FormatInt(appId, 10) + ":" + strconv.FormatInt(groupId, 10)
+}
+
 // Members 获取群组成员
-func (c *largeGroupUserCache) Members(groupId int64) ([]model.GroupUser, error) {
-	userMap, err := db.RedisCli.HGetAll(LargeGroupUserKey + strconv.FormatInt(groupId, 10)).Result()
+func (c *largeGroupUserCache) Members(appId, groupId int64) ([]model.GroupUser, error) {
+	userMap, err := db.RedisCli.HGetAll(c.Key(appId, groupId)).Result()
 	if err != nil {
 		return nil, gerrors.WrapError(err)
 	}
@@ -41,8 +45,8 @@ func (c *largeGroupUserCache) Members(groupId int64) ([]model.GroupUser, error) 
 }
 
 // IsMember 是否是群组成员
-func (c *largeGroupUserCache) IsMember(groupId, userId int64) (bool, error) {
-	is, err := db.RedisCli.HExists(LargeGroupUserKey+strconv.FormatInt(groupId, 10), strconv.FormatInt(userId, 10)).Result()
+func (c *largeGroupUserCache) IsMember(appId, groupId, userId int64) (bool, error) {
+	is, err := db.RedisCli.HExists(c.Key(appId, groupId), strconv.FormatInt(userId, 10)).Result()
 	if err != nil {
 		return false, gerrors.WrapError(err)
 	}
@@ -51,8 +55,8 @@ func (c *largeGroupUserCache) IsMember(groupId, userId int64) (bool, error) {
 }
 
 // MembersNum 获取群组成员数
-func (c *largeGroupUserCache) MembersNum(groupId int64) (int64, error) {
-	membersNum, err := db.RedisCli.HLen(LargeGroupUserKey + strconv.FormatInt(groupId, 10)).Result()
+func (c *largeGroupUserCache) MembersNum(appId, groupId int64) (int64, error) {
+	membersNum, err := db.RedisCli.HLen(c.Key(appId, groupId)).Result()
 	if err != nil {
 		return 0, gerrors.WrapError(err)
 	}
@@ -60,18 +64,19 @@ func (c *largeGroupUserCache) MembersNum(groupId int64) (int64, error) {
 }
 
 // Set 添加群组成员
-func (c *largeGroupUserCache) Set(groupId, userId int64, remarks, extra string) error {
+func (c *largeGroupUserCache) Set(appId, groupId, userId int64, label, extra string) error {
 	var user = model.GroupUser{
+		AppId:   appId,
 		GroupId: groupId,
 		UserId:  userId,
-		Remarks: remarks,
+		Label:   label,
 		Extra:   extra,
 	}
 	bytes, err := jsoniter.Marshal(user)
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
-	_, err = db.RedisCli.HSet(LargeGroupUserKey+strconv.FormatInt(groupId, 10), strconv.FormatInt(user.UserId, 10), bytes).Result()
+	_, err = db.RedisCli.HSet(c.Key(user.AppId, user.GroupId), strconv.FormatInt(user.UserId, 10), bytes).Result()
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
@@ -79,8 +84,8 @@ func (c *largeGroupUserCache) Set(groupId, userId int64, remarks, extra string) 
 }
 
 // Del 删除群组成员
-func (c *largeGroupUserCache) Del(groupId int64, userId int64) error {
-	_, err := db.RedisCli.HDel(LargeGroupUserKey+strconv.FormatInt(groupId, 10), strconv.FormatInt(userId, 10)).Result()
+func (c *largeGroupUserCache) Del(appId, groupId int64, userId int64) error {
+	_, err := db.RedisCli.HDel(c.Key(appId, groupId), strconv.FormatInt(userId, 10)).Result()
 	if err != nil {
 		return gerrors.WrapError(err)
 	}

@@ -1,8 +1,8 @@
 package cache
 
 import (
+	"im/internal/logic/db"
 	"im/internal/logic/model"
-	"im/pkg/db"
 	"im/pkg/gerrors"
 	"strconv"
 	"time"
@@ -19,10 +19,14 @@ type groupCache struct{}
 
 var GroupCache = new(groupCache)
 
+func (*groupCache) Key(appId, groupId int64) string {
+	return GroupKey + strconv.FormatInt(appId, 10) + ":" + strconv.FormatInt(groupId, 10)
+}
+
 // Get 获取群组缓存
-func (c *groupCache) Get(groupId int64) (*model.Group, error) {
+func (c *groupCache) Get(appId, groupId int64) (*model.Group, error) {
 	var user model.Group
-	err := RedisUtil.Get(GroupKey+strconv.FormatInt(groupId, 10), &user)
+	err := get(c.Key(appId, groupId), &user)
 	if err != nil && err != redis.Nil {
 		return nil, gerrors.WrapError(err)
 	}
@@ -34,7 +38,7 @@ func (c *groupCache) Get(groupId int64) (*model.Group, error) {
 
 // Set 设置群组缓存
 func (c *groupCache) Set(group *model.Group) error {
-	err := RedisUtil.Set(GroupKey+strconv.FormatInt(group.Id, 10), group, GroupExpire)
+	err := set(c.Key(group.AppId, group.GroupId), group, GroupExpire)
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
@@ -42,8 +46,8 @@ func (c *groupCache) Set(group *model.Group) error {
 }
 
 // Del 删除群组缓存
-func (c *groupCache) Del(groupId int64) error {
-	_, err := db.RedisCli.Del(GroupKey + strconv.FormatInt(groupId, 10)).Result()
+func (c *groupCache) Del(appId, groupId int64) error {
+	_, err := db.RedisCli.Del(c.Key(appId, groupId)).Result()
 	if err != nil {
 		return gerrors.WrapError(err)
 	}
